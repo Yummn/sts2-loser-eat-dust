@@ -1,0 +1,11 @@
+﻿; Engine configuration file.
+; Minimal Godot project file required by Godot.NET.Sdk.
+
+config_version=5
+
+[application]
+config/name="GreedyCredit"
+config/features=PackedStringArray("4.5", "C#")
+
+[dotnet]
+project/assembly_name="GreedyCredit"

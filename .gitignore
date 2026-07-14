@@ -1,0 +1,7 @@
+﻿.godot/
+.nuget/
+bin/
+obj/
+local.props
+*.user
+*.suo

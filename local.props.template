@@ -1,0 +1,5 @@
+﻿<Project>
+  <PropertyGroup>
+    <Sts2Path>?:/steamapps/common/Slay the Spire 2</Sts2Path>
+  </PropertyGroup>
+</Project>

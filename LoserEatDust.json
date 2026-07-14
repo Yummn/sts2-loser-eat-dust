@@ -1,0 +1,12 @@
+{
+  "id": "LoserEatDust",
+  "name": "败者食尘 / Loser Eat Dust",
+  "author": "Codex",
+  "description": "Records the initial state of every visited map node in the current act and lets you restart from any of them. Designed to coexist with Quick Restart mods. Single-player only; no BaseLib or PCK.",
+  "version": "v0.2.2",
+  "min_game_version": "0.103.2",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": [],
+  "affects_gameplay": true
+}

@@ -1,0 +1,7 @@
+﻿<Project>
+  <PropertyGroup>
+    <!-- If auto-discovery fails, create local.props and set Sts2Path manually, e.g.
+         <Sts2Path>D:/Steam/steamapps/common/Slay the Spire 2</Sts2Path>
+    -->
+  </PropertyGroup>
+</Project>
