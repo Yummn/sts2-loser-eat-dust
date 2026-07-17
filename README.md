@@ -1,35 +1,20 @@
-# 败者食尘 / Loser Eat Dust
+﻿# 败者食尘 / LoserEatDust
 
-当前版本：v0.2.2
+Slay the Spire 2 mod to restart from visited map nodes.
 
-适配《杀戮尖塔 2》手机版 v0.103.2 与桌面版 v0.107.x 的无 BaseLib、纯 DLL 模组。
+这些是给《Slay the Spire 2 / 杀戮尖塔2》v103/v107 调试制作的 MOD 归档。可安装压缩包放在 GitHub Releases；如果有多个版本，Release 按旧版到新版保留。
 
-> 当前为测试版：已在手机版确认模组加载并生成节点存档；跨节点恢复仍在继续实机验证。
+## 下载
 
-## 功能
-
-- 进入地图节点时，保存该节点的**初始状态**。
-- 当前阶段内走过多少节点，就可以从多少个节点中任意选择并重新开始。
-- 回到旧节点后，后续走过节点的记录仍然保留，可以切换到其他已经走过的节点。
-- 只记录每个坐标第一次进入时的状态，不会被战斗结束、事件完成或保存退出覆盖。
-- 单人模式生效；不依赖 BaseLib；不含 PCK，适合移动端。
-- v0.2.1 改用游戏自带的跨平台存档后端，并在暂停菜单补记当前节点，修复手机版没有节点记录的问题。
-- v0.2.2 针对手机版 v0.103.2 的旧保存 API 做双版本兼容，修复初始化补丁失败和 `FloorReached` 缺失。
-
-## 使用
-
-暂停菜单中新增两个按钮：
-
-1. **节点 X/Y：第N层 · 类型**：每点一次切换到更早的节点，循环选择本阶段所有已走过节点。
-2. **败者食尘：从这里重来**：加载所选节点第一次进入时的状态。
-
-本模组不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL 模组同时安装。
+- [v0.2.0](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.0)
+- [v0.2.1](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.1)
+- [v0.2.2](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.2)
 
 ## 安装
 
-模组目录结构：
+下载对应 Release 里的 zip，解压后把其中的 $(System.Collections.Hashtable.Id) 文件夹放入游戏 mods 目录。
 
-```text
-mods/LoserEatDust/LoserEatDust.dll
-mods/LoserEatDust/LoserEatDust.json
-```
+## 备注
+
+- 最新本地整合包来自 C:\Users\yummn\Downloads\杀戮尖塔2MOD\可安装-已测试v103。
+- 旧版本仅作留档；通常建议使用最新版本。
