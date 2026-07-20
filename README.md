@@ -9,12 +9,16 @@ Slay the Spire 2 mod to restart from visited map nodes.
 - [v0.2.0](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.0)
 - [v0.2.1](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.1)
 - [v0.2.2](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.2)
+- [v0.2.3](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.3)
+- [v0.2.4](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.4)（推荐，Android 启动稳定版）
 
 ## 安装
 
-下载对应 Release 里的 zip，解压后把其中的 $(System.Collections.Hashtable.Id) 文件夹放入游戏 mods 目录。
+下载对应 Release 里的 zip，解压后把其中的 `LoserEatDust` 文件夹放入游戏 `mods/` 目录。
 
 ## 备注
 
 - 最新本地整合包来自 C:\Users\yummn\Downloads\杀戮尖塔2MOD\可安装-已测试v103。
 - 旧版本仅作留档；通常建议使用最新版本。
+- v0.2.4 在 Android 上使用无 Harmony 原生跳板的存档/暂停菜单监听器，桌面版仍保留事件钩子。
+- v0.103.2 Android 与整套模组连续冷启动 5/5 成功。

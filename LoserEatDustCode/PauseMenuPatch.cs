@@ -19,7 +19,7 @@ internal static class PauseMenuPatch
     private static string? _selectedKey;
 
     [HarmonyPostfix]
-    private static void Postfix(NPauseMenu __instance)
+    internal static void EnsureInstalled(NPauseMenu __instance)
     {
         if (RunManager.Instance.NetService.Type != NetGameType.Singleplayer)
             return;
