@@ -1,6 +1,7 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Saves;
+using System.Globalization;
 using System.Reflection;
 
 namespace LoserEatDust;
@@ -9,7 +10,8 @@ internal sealed record NodeCheckpoint(
     string Key,
     string Path,
     SerializableRun Save,
-    DateTime CapturedAtUtc)
+    DateTime CapturedAtUtc,
+    long? SpireBankBalance)
 {
     public int VisitNumber => Save.VisitedMapCoords?.Count ?? 0;
 
@@ -61,6 +63,12 @@ internal static class SnapshotStore
 
     private static string MarkerPath => JoinPath(RootDirectory, "current_act.txt");
 
+    // SpireBank deliberately stores its balance outside SerializableRun so it
+    // can survive across runs. A node rewind therefore needs a small sidecar
+    // for that external value.
+    private static string SpireBankBalancePath =>
+        JoinPath(SaveManager.Instance.GetProfileScopedPath("spire_bank"), "balance.txt");
+
     public static void CaptureInitialState(SerializableRun save)
     {
         if (save.StartTime == 0)
@@ -71,12 +79,16 @@ internal static class SnapshotStore
             EnsureRunAndAct(save);
             var key = GetNodeKey(save);
             var path = JoinPath(RootDirectory, $"node_{key}.save");
+            var bankPath = GetSpireBankSidecarPath(key);
 
             // The first save made at a coordinate is its room-entry state. Never
             // overwrite it with combat-end, event-end, or save-and-quit data.
             if (Store.FileExists(path))
                 return;
 
+            // Write the external-state sidecar first. If the process stops
+            // between writes, the absent run checkpoint lets capture retry.
+            Store.WriteFile(bankPath, ReadSpireBankBalance().ToString(CultureInfo.InvariantCulture));
             Store.WriteFile(path, SaveManager.ToJson(save));
             MainFile.Logger.Info($"[败者食尘] recorded {key}: act={save.CurrentActIndex + 1}, visit={save.VisitedMapCoords?.Count ?? 0}.");
         }
@@ -132,7 +144,8 @@ internal static class SnapshotStore
                         GetNodeKey(save),
                         path,
                         save,
-                        Store.GetLastModifiedTime(path).UtcDateTime));
+                        Store.GetLastModifiedTime(path).UtcDateTime,
+                        ReadSpireBankSidecar(GetNodeKey(save))));
                 }
                 catch (Exception ex)
                 {
@@ -182,6 +195,70 @@ internal static class SnapshotStore
     }
 
     private static string Marker(SerializableRun save) => $"{save.StartTime}|{save.CurrentActIndex}";
+
+    public static void RestoreExternalState(NodeCheckpoint checkpoint)
+    {
+        if (checkpoint.SpireBankBalance is not long balance)
+        {
+            MainFile.Logger.Warn($"[LoserEatDust] checkpoint {checkpoint.Key} predates SpireBank balance snapshots; bank balance left unchanged.");
+            return;
+        }
+
+        lock (Sync)
+        {
+            try
+            {
+                var directory = SaveManager.Instance.GetProfileScopedPath("spire_bank");
+                Store.CreateDirectory(directory);
+                Store.WriteFile(SpireBankBalancePath, Math.Max(0, balance).ToString(CultureInfo.InvariantCulture));
+                MainFile.Logger.Info($"[LoserEatDust] restored SpireBank balance for {checkpoint.Key}: {Math.Max(0, balance)}.");
+            }
+            catch (Exception ex)
+            {
+                MainFile.Logger.Warn($"[LoserEatDust] failed to restore SpireBank balance for {checkpoint.Key}: {ex.Message}");
+            }
+        }
+    }
+
+    private static string GetSpireBankSidecarPath(string key) =>
+        JoinPath(RootDirectory, $"node_{key}.spire_bank.balance");
+
+    private static long ReadSpireBankBalance()
+    {
+        try
+        {
+            if (!Store.FileExists(SpireBankBalancePath))
+                return 0;
+
+            var raw = Store.ReadFile(SpireBankBalancePath)?.Trim();
+            return long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+                ? Math.Max(0, value)
+                : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static long? ReadSpireBankSidecar(string key)
+    {
+        try
+        {
+            var path = GetSpireBankSidecarPath(key);
+            if (!Store.FileExists(path))
+                return null;
+
+            var raw = Store.ReadFile(path)?.Trim();
+            return long.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+                ? Math.Max(0, value)
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
 
     private static string JoinPath(string directory, string fileName) =>
         $"{directory.TrimEnd('/', '\\')}/{fileName}";

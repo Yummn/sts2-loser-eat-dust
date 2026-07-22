@@ -35,6 +35,7 @@ internal static class RunRestarter
             try
             {
                 SnapshotStore.ReplaceCurrentRun(serializableRun);
+                SnapshotStore.RestoreExternalState(checkpoint);
             }
             finally
             {
