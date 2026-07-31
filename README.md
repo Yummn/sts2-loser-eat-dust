@@ -1,26 +1,49 @@
-﻿# 败者食尘 / LoserEatDust
+# 败者食尘 / Loser Eat Dust
 
-Slay the Spire 2 mod to restart from visited map nodes.
+当前版本：v0.3.0
 
-这些是给《Slay the Spire 2 / 杀戮尖塔2》v103/v107 调试制作的 MOD 归档。可安装压缩包放在 GitHub Releases；如果有多个版本，Release 按旧版到新版保留。
+适配《杀戮尖塔 2》手机版 v0.103.2 与桌面版 v0.107.x 的无 BaseLib、纯 DLL 模组。
 
 ## 下载
 
-- [v0.2.0](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.0)
-- [v0.2.1](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.1)
-- [v0.2.2](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.2)
-- [v0.2.3](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.3)
-- [v0.2.4](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.2.4)（推荐，Android 启动稳定版）
+- [v0.3.0（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.3.0)
+- [历史版本](https://github.com/Yummn/sts2-loser-eat-dust/releases)
+
+## 功能
+
+- 进入地图节点时，保存该节点的**初始状态**。
+- 当前阶段内走过多少节点，就可以从多少个节点中任意选择并重新开始。
+- 回到旧节点后，后续走过节点的记录仍然保留，可以切换到其他已经走过的节点。
+- 只记录每个坐标第一次进入时的状态，不会被战斗结束、事件完成或保存退出覆盖。
+- 单人模式生效；不依赖 BaseLib；不含 PCK，适合移动端。
+- v0.2.1 改用游戏自带的跨平台存档后端，并在暂停菜单补记当前节点，修复手机版没有节点记录的问题。
+- v0.2.2 针对手机版 v0.103.2 的旧保存 API 做双版本兼容，修复初始化补丁失败和 `FloorReached` 缺失。
+- v0.2.5 节点记录会同步保存尖塔银行余额，回溯时一并恢复。
+- v0.3.0 新增**死亡拦截**：正常防死遗物和药水结算后，如果角色仍会死亡，则暂停死亡流程并保留本局存档。
+- 死亡窗口可以选择**从本节点重来**，直接恢复该节点初始状态；也可以选择**接受死亡并结束本局**，继续原版结算。
+- 死亡拦截使用游戏公开的战斗 Hook，不修改死亡函数，不需要 Harmony 原生跳板，兼容手机版。
+
+## 使用
+
+暂停菜单中新增两个按钮：
+
+1. **节点 X/Y：第N层 · 类型**：每点一次切换到更早的节点，循环选择本阶段所有已走过节点。
+2. **败者食尘：从这里重来**：加载所选节点第一次进入时的状态。
+
+本模组不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL 模组同时安装。
+
+## 参考
+
+死亡拦截的交互思路参考了 Douvahkiin 的开源模组
+[`StS2-DeathIntercept`](https://github.com/Douvahkiin/StS2-DeathIntercept)。
+败者食尘采用不同的实现：通过游戏公开的 `ModHelper` 战斗 Hook 在死亡结算前阻止死亡，
+并复用自身节点快照恢复，不拦截或删除原版存档函数。
 
 ## 安装
 
-下载对应 Release 里的 zip，解压后把其中的 `LoserEatDust` 文件夹放入游戏 `mods/` 目录。
+模组目录结构：
 
-## 备注
-
-- 最新本地整合包来自 C:\Users\yummn\Downloads\杀戮尖塔2MOD\可安装-已测试v103。
-- 旧版本仅作留档；通常建议使用最新版本。
-- v0.2.4 在 Android 上使用无 Harmony 原生跳板的存档/暂停菜单监听器，桌面版仍保留事件钩子。
-- v0.103.2 Android 与整套模组连续冷启动 5/5 成功。
-
-- v0.2.5 ???????????????????????????????????????????????????????????????????
+```text
+mods/LoserEatDust/LoserEatDust.dll
+mods/LoserEatDust/LoserEatDust.json
+```

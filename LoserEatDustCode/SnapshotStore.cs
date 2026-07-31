@@ -161,6 +161,19 @@ internal static class SnapshotStore
         }
     }
 
+    public static NodeCheckpoint? GetCurrentCheckpoint()
+    {
+        var read = SaveManager.Instance.LoadRunSave();
+        if (!read.Success || read.SaveData is null)
+            return null;
+
+        var current = read.SaveData;
+        CaptureInitialState(current);
+        var key = GetNodeKey(current);
+        return GetCheckpoints(current)
+            .LastOrDefault(checkpoint => checkpoint.Key == key);
+    }
+
     public static string GetNodeKey(SerializableRun save)
     {
         if (save.VisitedMapCoords is not { Count: > 0 } coords)
