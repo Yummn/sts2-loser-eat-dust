@@ -1,8 +1,8 @@
 ﻿{
     "id":  "LoserEatDust",
     "name":  "败者食尘 / Loser Eat Dust",
-    "author":  "Codex",
-    "description":  "Records the initial state of every visited map node and lets you restart from any of them. v0.3.0 also intercepts combat death before the run ends and offers an immediate retry from the current node. Single-player only; no BaseLib or PCK.",
+    "author":  "Yummn",
+    "description":  "记录每个已访问地图节点第一次进入时的状态，并允许在当前阶段内返回任意旧节点重新开始。v0.3.0 增加死亡拦截，可从当前节点重试或接受死亡。仅单人模式生效，无需 BaseLib 或 PCK。",
     "version":  "v0.3.0",
     "min_game_version":  "0.103.2",
     "has_pck":  false,
