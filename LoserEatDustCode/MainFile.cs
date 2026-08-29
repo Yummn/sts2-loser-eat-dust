@@ -25,7 +25,7 @@ public partial class MainFile : Node
             // save file and pause-menu scene directly, so avoid every native
             // detour here instead of merely removing one redundant save hook.
             LoserEatDustAndroidWatcher.Install();
-            Logger.Info("[败者食尘] loaded v0.3.0: Android uses detour-free save, pause, and death interception; BaseLib not required.");
+            Logger.Info("[败者食尘] loaded v0.3.1: Android uses detour-free save, pause, and death interception; revisited checkpoints overwrite abandoned timeline records once; BaseLib not required.");
             return;
         }
 
@@ -38,7 +38,7 @@ public partial class MainFile : Node
             harmony.CreateClassProcessor(type).Patch();
             Logger.Info($"[败者食尘] patched {type.FullName}");
         }
-        Logger.Info("[败者食尘] loaded v0.3.0: desktop save hooks and detour-free death interception enabled; BaseLib not required.");
+        Logger.Info("[败者食尘] loaded v0.3.1: desktop save hooks and detour-free death interception enabled; revisited checkpoints overwrite abandoned timeline records once; BaseLib not required.");
     }
 
     private static bool IsAndroidRuntime()

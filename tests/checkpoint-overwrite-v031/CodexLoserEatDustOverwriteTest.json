@@ -1,0 +1,1 @@
+{"id":"CodexLoserEatDustOverwriteTest","name":"Codex Loser Eat Dust Overwrite Test","author":"Codex","description":"Temporary live test for checkpoint replacement after rewind.","version":"0.1.0","min_game_version":"0.107.1","has_pck":false,"has_dll":true,"dependencies":["LoserEatDust"],"affects_gameplay":false}

@@ -63,6 +63,15 @@ internal static class SnapshotStore
 
     private static string MarkerPath => JoinPath(RootDirectory, "current_act.txt");
 
+    // After rewinding, checkpoints after the selected visit enter a new
+    // timeline. The first save produced when each of those nodes is reached
+    // again must replace the old room-entry snapshot, while later saves in the
+    // same room must remain unable to overwrite that new entry state.
+    private static string RewriteMarkerPath => JoinPath(RootDirectory, "rewrite_timeline.txt");
+
+    private static string GetRewriteDonePath(string key) =>
+        JoinPath(RootDirectory, $"rewrite_done_{key}.txt");
+
     // SpireBank deliberately stores its balance outside SerializableRun so it
     // can survive across runs. A node rewind therefore needs a small sidecar
     // for that external value.
@@ -81,16 +90,43 @@ internal static class SnapshotStore
             var path = JoinPath(RootDirectory, $"node_{key}.save");
             var bankPath = GetSpireBankSidecarPath(key);
 
+            var rewriting = IsRewritingNode(save);
+            var rewriteDonePath = GetRewriteDonePath(key);
+
             // The first save made at a coordinate is its room-entry state. Never
             // overwrite it with combat-end, event-end, or save-and-quit data.
-            if (Store.FileExists(path))
+            // Exception: after a rewind, the first save made when a later node
+            // is reached again replaces the checkpoint from the abandoned
+            // timeline. A per-node done marker restores immutability immediately.
+            if (Store.FileExists(path) && (!rewriting || Store.FileExists(rewriteDonePath)))
                 return;
 
             // Write the external-state sidecar first. If the process stops
             // between writes, the absent run checkpoint lets capture retry.
             Store.WriteFile(bankPath, ReadSpireBankBalance().ToString(CultureInfo.InvariantCulture));
             Store.WriteFile(path, SaveManager.ToJson(save));
-            MainFile.Logger.Info($"[败者食尘] recorded {key}: act={save.CurrentActIndex + 1}, visit={save.VisitedMapCoords?.Count ?? 0}.");
+            if (rewriting)
+                Store.WriteFile(rewriteDonePath, "done");
+            MainFile.Logger.Info($"[败者食尘] {(rewriting ? "overwrote" : "recorded")} {key}: act={save.CurrentActIndex + 1}, visit={save.VisitedMapCoords?.Count ?? 0}.");
+        }
+    }
+
+    public static void BeginRewoundTimeline(NodeCheckpoint checkpoint)
+    {
+        lock (Sync)
+        {
+            EnsureRunAndAct(checkpoint.Save);
+            foreach (var entry in Store.GetFilesInDirectory(RootDirectory))
+            {
+                var path = ResolveStorePath(entry);
+                if (GetFileName(path).StartsWith("rewrite_done_", StringComparison.Ordinal))
+                    Store.DeleteFile(path);
+            }
+
+            Store.WriteFile(
+                RewriteMarkerPath,
+                $"{Marker(checkpoint.Save)}|{checkpoint.VisitNumber.ToString(CultureInfo.InvariantCulture)}");
+            MainFile.Logger.Info($"[败者食尘] rewound timeline begins after visit {checkpoint.VisitNumber}; revisited node checkpoints will be replaced once.");
         }
     }
 
@@ -208,6 +244,27 @@ internal static class SnapshotStore
     }
 
     private static string Marker(SerializableRun save) => $"{save.StartTime}|{save.CurrentActIndex}";
+
+    private static bool IsRewritingNode(SerializableRun save)
+    {
+        try
+        {
+            if (!Store.FileExists(RewriteMarkerPath))
+                return false;
+
+            var raw = Store.ReadFile(RewriteMarkerPath);
+            var prefix = Marker(save) + "|";
+            if (string.IsNullOrEmpty(raw) || !raw.StartsWith(prefix, StringComparison.Ordinal))
+                return false;
+
+            return int.TryParse(raw[prefix.Length..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var cutoff) &&
+                   (save.VisitedMapCoords?.Count ?? 0) > cutoff;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public static void RestoreExternalState(NodeCheckpoint checkpoint)
     {

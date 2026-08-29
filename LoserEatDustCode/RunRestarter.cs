@@ -34,6 +34,7 @@ internal static class RunRestarter
             RecordNodeEntryPatch.SuppressCapture = true;
             try
             {
+                SnapshotStore.BeginRewoundTimeline(checkpoint);
                 SnapshotStore.ReplaceCurrentRun(serializableRun);
                 SnapshotStore.RestoreExternalState(checkpoint);
             }
