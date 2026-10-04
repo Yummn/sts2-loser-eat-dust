@@ -1,0 +1,268 @@
+using Godot;
+using HarmonyLib;
+using MegaCrit.Sts2.Core.Map;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
+
+namespace NodeRewind;
+
+/// <summary>
+/// Replaces the old pause-menu selector with direct map interaction. The
+/// vanilla map disables traveled points, so RefreshVisualsInstantly re-enables
+/// only points that have a room-entry checkpoint; OnRelease then consumes the
+/// click before the normal map travel action can run.
+/// </summary>
+[HarmonyPatch(typeof(NMapPoint), "OnRelease")]
+internal static class MapPointClickPatch
+{
+    [HarmonyPrefix]
+    private static bool Prefix(NMapPoint __instance)
+    {
+        try
+        {
+            return !NodeRewindMap.TryHandleClick(__instance);
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Warn($"[节点回溯] map-node click failed: {ex.Message}");
+            return true;
+        }
+    }
+}
+
+[HarmonyPatch(typeof(NMapPoint), nameof(NMapPoint.RefreshVisualsInstantly))]
+internal static class MapPointVisualPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix(NMapPoint __instance)
+    {
+        try { NodeRewindMap.RefreshPoint(__instance); }
+        catch (Exception ex) { MainFile.Logger.Warn($"[节点回溯] map marker refresh failed: {ex.Message}"); }
+    }
+}
+
+[HarmonyPatch(typeof(NMapScreen), nameof(NMapScreen.Open))]
+internal static class MapScreenOpenPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        NodeRewindMap.InvalidateAndRefreshDeferred();
+    }
+}
+
+[HarmonyPatch(typeof(NMapScreen), nameof(NMapScreen.RefreshAllPointVisuals))]
+internal static class MapScreenRefreshPatch
+{
+    [HarmonyPostfix]
+    private static void Postfix()
+    {
+        NodeRewindMap.InvalidateAndRefreshDeferred();
+    }
+}
+
+internal static class NodeRewindMap
+{
+    private static readonly object Sync = new();
+    private static Dictionary<MapCoord, NodeCheckpoint> _checkpoints = [];
+    private static HashSet<MapCoord> _currentPath = [];
+    private static MapCoord? _currentCoord;
+    private static bool _cacheReady;
+    private static bool _refreshQueued;
+
+    public static bool TryHandleClick(NMapPoint point)
+    {
+        if (!IsSinglePlayer() || point.Point is null)
+            return false;
+
+        EnsureCache();
+        if (!_checkpoints.TryGetValue(point.Point.coord, out var checkpoint))
+            return false;
+
+        if (!RunRestarter.CanRestore)
+            return true;
+
+        MainFile.Logger.Info($"[节点回溯] map node selected: {checkpoint.Key} ({checkpoint.DisplayName}).");
+        RunRestarter.Restore(checkpoint);
+        return true;
+    }
+
+    public static void RefreshPoint(NMapPoint point)
+    {
+        if (!IsSinglePlayer() || point.Point is null)
+            return;
+
+        EnsureCache();
+        if (!_checkpoints.TryGetValue(point.Point.coord, out var checkpoint))
+            return;
+
+        // The original map marks all traveled nodes disabled. Historical
+        // checkpoints are deliberately clickable even when the run is not in
+        // a travel phase; the click patch consumes them before vanilla travel.
+        point.Enable();
+        var marker = GetOrCreateMarker(point);
+        var state = point.Point.coord == _currentCoord
+            ? NodeRewindMarkerState.Current
+            : _currentPath.Contains(point.Point.coord)
+                ? NodeRewindMarkerState.CurrentRoute
+                : NodeRewindMarkerState.RewoundBranch;
+        marker.SetState(state, checkpoint.VisitNumber);
+    }
+
+    public static void InvalidateAndRefreshDeferred()
+    {
+        lock (Sync)
+        {
+            _cacheReady = false;
+            _checkpoints = [];
+            _currentPath = [];
+            _currentCoord = null;
+        }
+
+        if (_refreshQueued)
+            return;
+
+        _refreshQueued = true;
+        Callable.From(() =>
+        {
+            _refreshQueued = false;
+            RefreshAllMarkers();
+        }).CallDeferred();
+    }
+
+    public static void RefreshAllMarkers()
+    {
+        var screen = NMapScreen.Instance;
+        if (!GodotObject.IsInstanceValid(screen) || !screen.IsVisibleInTree())
+            return;
+
+        EnsureCache(force: true);
+        var points = screen.GetNodeOrNull<Control>("TheMap/Points");
+        if (points is null)
+            return;
+
+        foreach (var point in points.GetChildren().OfType<NMapPoint>())
+            RefreshPoint(point);
+    }
+
+    private static void EnsureCache(bool force = false)
+    {
+        if (_cacheReady && !force)
+            return;
+
+        lock (Sync)
+        {
+            if (_cacheReady && !force)
+                return;
+
+            try
+            {
+                var read = SaveManager.Instance.LoadRunSave();
+                if (!read.Success || read.SaveData is null)
+                {
+                    _checkpoints = [];
+                    _currentPath = [];
+                    _currentCoord = null;
+                    _cacheReady = true;
+                    return;
+                }
+
+                var save = read.SaveData;
+                SnapshotStore.CaptureInitialState(save);
+                var checkpoints = SnapshotStore.GetCheckpoints(save);
+                _checkpoints = checkpoints
+                    .Where(checkpoint => checkpoint.Coord.HasValue)
+                    .GroupBy(checkpoint => checkpoint.Coord!.Value)
+                    .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.VisitNumber).First());
+                _currentPath = save.VisitedMapCoords?.ToHashSet() ?? [];
+                _currentCoord = save.VisitedMapCoords is { Count: > 0 } coords ? coords[^1] : null;
+            }
+            catch (Exception ex)
+            {
+                _checkpoints = [];
+                _currentPath = [];
+                _currentCoord = null;
+                MainFile.Logger.Warn($"[节点回溯] map checkpoint cache failed: {ex.Message}");
+            }
+
+            _cacheReady = true;
+        }
+    }
+
+    private static NodeRewindMarker GetOrCreateMarker(NMapPoint point)
+    {
+        if (point.GetNodeOrNull<NodeRewindMarker>(NodeRewindMarker.NodeName) is { } existing)
+            return existing;
+
+        var marker = new NodeRewindMarker { Name = NodeRewindMarker.NodeName };
+        point.AddChild(marker);
+        return marker;
+    }
+
+    private static bool IsSinglePlayer()
+    {
+        try
+        {
+            return RunManager.Instance.NetService.Type == NetGameType.Singleplayer;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+
+internal enum NodeRewindMarkerState
+{
+    CurrentRoute,
+    Current,
+    RewoundBranch
+}
+
+internal partial class NodeRewindMarker : Control
+{
+    internal const string NodeName = "NodeRewindMarker";
+    private NodeRewindMarkerState _state;
+    private int _visitNumber;
+
+    public override void _Ready()
+    {
+        MouseFilter = MouseFilterEnum.Ignore;
+        ZIndex = 25;
+        SetAnchorsPreset(LayoutPreset.Center);
+        OffsetLeft = -72f;
+        OffsetTop = -72f;
+        OffsetRight = 72f;
+        OffsetBottom = 72f;
+        QueueRedraw();
+    }
+
+    internal void SetState(NodeRewindMarkerState state, int visitNumber)
+    {
+        _state = state;
+        _visitNumber = visitNumber;
+        Visible = true;
+        QueueRedraw();
+    }
+
+    public override void _Draw()
+    {
+        var center = new Vector2(72f, 72f);
+        var color = _state switch
+        {
+            NodeRewindMarkerState.Current => new Color(1f, 0.88f, 0.35f, 0.98f),
+            NodeRewindMarkerState.CurrentRoute => new Color(0.96f, 0.63f, 0.20f, 0.92f),
+            _ => new Color(0.48f, 0.67f, 0.94f, 0.88f)
+        };
+
+        DrawArc(center, 54f, 0f, Mathf.Tau, 48, new Color(0.12f, 0.045f, 0.015f, 0.82f), 8f, true);
+        DrawArc(center, 54f, 0f, Mathf.Tau, 48, color, 4f, true);
+        DrawArc(center, 61f, -0.18f, 1.6f, 18, new Color(color, 0.65f), 2f, true);
+        DrawArc(center, 61f, 2.95f, 4.68f, 18, new Color(color, 0.65f), 2f, true);
+
+        if (_state == NodeRewindMarkerState.Current)
+            DrawCircle(center, 5f, new Color(1f, 0.95f, 0.68f, 0.95f));
+    }
+}

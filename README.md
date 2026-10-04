@@ -1,12 +1,12 @@
-# 败者食尘 / Loser Eat Dust
+# 节点回溯 / Node Rewind
 
-当前版本：v0.3.0
+当前版本：v0.4.1
 
 适配《杀戮尖塔 2》手机版 v0.103.2 与桌面版 v0.107.x 的无 BaseLib、纯 DLL 模组。
 
 ## 下载
 
-- [v0.3.0（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.3.0)
+- [v0.4.1（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.1)
 - [历史版本](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 
 ## 功能
@@ -22,13 +22,14 @@
 - v0.3.0 新增**死亡拦截**：正常防死遗物和药水结算后，如果角色仍会死亡，则暂停死亡流程并保留本局存档。
 - 死亡窗口可以选择**从本节点重来**，直接恢复该节点初始状态；也可以选择**接受死亡并结束本局**，继续原版结算。
 - 死亡拦截使用游戏公开的战斗 Hook，不修改死亡函数，不需要 Harmony 原生跳板，兼容手机版。
+- v0.4.0 移除暂停菜单的节点选择按钮，改为在地图上点击带圆环的已走节点直接回溯。
+- 当前路线的记录使用暖金色圆环；回溯后遗留的旧分支使用蓝色圆环；当前节点使用更亮的金色圆环。
+- 首次加载当前局时会把旧版 `loser_eat_dust` 记录迁移到 `node_rewind`，不需要手动删除旧记录。
+- v0.4.1 清理旧名称和旧交互文案，统一显示为“节点回溯”；保留旧存档目录迁移以兼容已有进行中的本局记录。
 
 ## 使用
 
-暂停菜单中新增两个按钮：
-
-1. **节点 X/Y：第N层 · 类型**：每点一次切换到更早的节点，循环选择本阶段所有已走过节点。
-2. **败者食尘：从这里重来**：加载所选节点第一次进入时的状态。
+打开地图后，带圆环的节点就是已经保存过初始状态的节点。直接点击节点即可回到该节点第一次进入时的状态；点击当前节点可以重新进入当前节点初始状态。回溯后，仍保留的旧节点会改用冷色圆环表示。
 
 本模组不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL 模组同时安装。
 
@@ -36,7 +37,7 @@
 
 死亡拦截的交互思路参考了 Douvahkiin 的开源模组
 [`StS2-DeathIntercept`](https://github.com/Douvahkiin/StS2-DeathIntercept)。
-败者食尘采用不同的实现：通过游戏公开的 `ModHelper` 战斗 Hook 在死亡结算前阻止死亡，
+节点回溯采用不同的实现：通过游戏公开的 `ModHelper` 战斗 Hook 在死亡结算前阻止死亡，
 并复用自身节点快照恢复，不拦截或删除原版存档函数。
 
 ## 安装
@@ -44,6 +45,6 @@
 模组目录结构：
 
 ```text
-mods/LoserEatDust/LoserEatDust.dll
-mods/LoserEatDust/LoserEatDust.json
+mods/NodeRewind/NodeRewind.dll
+mods/NodeRewind/NodeRewind.json
 ```

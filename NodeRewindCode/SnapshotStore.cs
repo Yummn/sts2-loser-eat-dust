@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Saves;
 using System.Globalization;
 using System.Reflection;
 
-namespace LoserEatDust;
+namespace NodeRewind;
 
 internal sealed record NodeCheckpoint(
     string Key,
@@ -59,6 +59,9 @@ internal static class SnapshotStore
                      throw new InvalidOperationException("SaveManager save store is not initialized."));
 
     private static string RootDirectory =>
+        SaveManager.Instance.GetProfileScopedPath("node_rewind");
+
+    private static string LegacyRootDirectory =>
         SaveManager.Instance.GetProfileScopedPath("loser_eat_dust");
 
     private static string MarkerPath => JoinPath(RootDirectory, "current_act.txt");
@@ -90,7 +93,7 @@ internal static class SnapshotStore
             // between writes, the absent run checkpoint lets capture retry.
             Store.WriteFile(bankPath, ReadSpireBankBalance().ToString(CultureInfo.InvariantCulture));
             Store.WriteFile(path, SaveManager.ToJson(save));
-            MainFile.Logger.Info($"[败者食尘] recorded {key}: act={save.CurrentActIndex + 1}, visit={save.VisitedMapCoords?.Count ?? 0}.");
+            MainFile.Logger.Info($"[节点回溯] recorded {key}: act={save.CurrentActIndex + 1}, visit={save.VisitedMapCoords?.Count ?? 0}.");
         }
     }
 
@@ -149,7 +152,7 @@ internal static class SnapshotStore
                 }
                 catch (Exception ex)
                 {
-                    MainFile.Logger.Warn($"[败者食尘] ignored unreadable node snapshot: {ex.Message}");
+                    MainFile.Logger.Warn($"[节点回溯] ignored unreadable node snapshot: {ex.Message}");
                 }
             }
 
@@ -185,6 +188,7 @@ internal static class SnapshotStore
 
     private static void EnsureRunAndAct(SerializableRun save)
     {
+        MigrateLegacyRunIfNeeded(save);
         Store.CreateDirectory(RootDirectory);
         if (!MarkerMatches(save))
         {
@@ -193,6 +197,38 @@ internal static class SnapshotStore
         }
 
         Store.WriteFile(MarkerPath, Marker(save));
+    }
+
+    private static void MigrateLegacyRunIfNeeded(SerializableRun save)
+    {
+        try
+        {
+            var legacyMarker = JoinPath(LegacyRootDirectory, "current_act.txt");
+            if (Store.FileExists(MarkerPath) ||
+                !Store.FileExists(legacyMarker) ||
+                Store.ReadFile(legacyMarker) != Marker(save) ||
+                !Store.DirectoryExists(LegacyRootDirectory))
+                return;
+
+            Store.CreateDirectory(RootDirectory);
+            foreach (var entry in Store.GetFilesInDirectory(LegacyRootDirectory))
+            {
+                var source = ResolveLegacyStorePath(entry);
+                var fileName = GetFileName(source);
+                if (string.IsNullOrWhiteSpace(fileName))
+                    continue;
+
+                var content = Store.ReadFile(source);
+                if (content is not null)
+                    Store.WriteFile(JoinPath(RootDirectory, fileName), content);
+            }
+
+            MainFile.Logger.Info("[节点回溯] migrated the current run from loser_eat_dust to node_rewind.");
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Warn($"[节点回溯] legacy snapshot migration skipped: {ex.Message}");
+        }
     }
 
     private static bool MarkerMatches(SerializableRun save)
@@ -213,7 +249,7 @@ internal static class SnapshotStore
     {
         if (checkpoint.SpireBankBalance is not long balance)
         {
-            MainFile.Logger.Warn($"[LoserEatDust] checkpoint {checkpoint.Key} predates SpireBank balance snapshots; bank balance left unchanged.");
+            MainFile.Logger.Warn($"[NodeRewind] checkpoint {checkpoint.Key} predates SpireBank balance snapshots; bank balance left unchanged.");
             return;
         }
 
@@ -224,11 +260,11 @@ internal static class SnapshotStore
                 var directory = SaveManager.Instance.GetProfileScopedPath("spire_bank");
                 Store.CreateDirectory(directory);
                 Store.WriteFile(SpireBankBalancePath, Math.Max(0, balance).ToString(CultureInfo.InvariantCulture));
-                MainFile.Logger.Info($"[LoserEatDust] restored SpireBank balance for {checkpoint.Key}: {Math.Max(0, balance)}.");
+                MainFile.Logger.Info($"[NodeRewind] restored SpireBank balance for {checkpoint.Key}: {Math.Max(0, balance)}.");
             }
             catch (Exception ex)
             {
-                MainFile.Logger.Warn($"[LoserEatDust] failed to restore SpireBank balance for {checkpoint.Key}: {ex.Message}");
+                MainFile.Logger.Warn($"[NodeRewind] failed to restore SpireBank balance for {checkpoint.Key}: {ex.Message}");
             }
         }
     }
@@ -280,6 +316,15 @@ internal static class SnapshotStore
     {
         var normalizedEntry = entry.Replace('\\', '/');
         var normalizedRoot = RootDirectory.Replace('\\', '/').TrimEnd('/');
+        return normalizedEntry.StartsWith(normalizedRoot + "/", StringComparison.Ordinal)
+            ? normalizedEntry
+            : JoinPath(normalizedRoot, GetFileName(normalizedEntry));
+    }
+
+    private static string ResolveLegacyStorePath(string entry)
+    {
+        var normalizedEntry = entry.Replace('\\', '/');
+        var normalizedRoot = LegacyRootDirectory.Replace('\\', '/').TrimEnd('/');
         return normalizedEntry.StartsWith(normalizedRoot + "/", StringComparison.Ordinal)
             ? normalizedEntry
             : JoinPath(normalizedRoot, GetFileName(normalizedEntry));

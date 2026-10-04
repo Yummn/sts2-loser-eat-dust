@@ -8,14 +8,14 @@ using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace LoserEatDust;
+namespace NodeRewind;
 
 /// <summary>
 /// A detour-free death interceptor. Registering an AbstractModel as a combat
 /// hook listener makes the feature work on both desktop and Android without
 /// patching CreatureCmd, NRun, or SaveManager.
 /// </summary>
-public sealed class LoserEatDustDeathHook : AbstractModel
+public sealed class NodeRewindDeathHook : AbstractModel
 {
     public override bool ShouldReceiveCombatHooks => true;
 
@@ -42,10 +42,10 @@ internal static class DeathInterceptController
             $"{MainFile.ModId}.DeathIntercept",
             _ =>
             [
-                ModelDb.GetById<LoserEatDustDeathHook>(
-                    ModelDb.GetId<LoserEatDustDeathHook>())
+                ModelDb.GetById<NodeRewindDeathHook>(
+                    ModelDb.GetId<NodeRewindDeathHook>())
             ]);
-        MainFile.Logger.Info("[败者食尘] detour-free death interception registered.");
+        MainFile.Logger.Info("[节点回溯] detour-free death interception registered.");
     }
 
     internal static bool ShouldAllowDeath(Creature creature)
@@ -79,13 +79,13 @@ internal static class DeathInterceptController
         }
         catch (Exception ex)
         {
-            MainFile.Logger.Error($"[败者食尘] failed to prepare death checkpoint: {ex}");
+            MainFile.Logger.Error($"[节点回溯] failed to prepare death checkpoint: {ex}");
             checkpoint = null;
         }
 
         if (checkpoint is null)
         {
-            MainFile.Logger.Warn("[败者食尘] no current-node checkpoint was available; continuing normal death flow.");
+            MainFile.Logger.Warn("[节点回溯] no current-node checkpoint was available; continuing normal death flow.");
             AllowNormalDeath(creature);
             return;
         }
@@ -104,7 +104,7 @@ internal static class DeathInterceptController
         // snapshot replaces the whole combat on the following process frame.
         creature.SetCurrentHpInternal(1m);
         _handlingCreature = null;
-        MainFile.Logger.Info($"[败者食尘] death intercepted; restoring {checkpoint.Key}.");
+        MainFile.Logger.Info($"[节点回溯] death intercepted; restoring {checkpoint.Key}.");
         _ = TaskHelper.RunSafely(RestoreOnNextFrameAsync(checkpoint));
     }
 
@@ -124,8 +124,8 @@ internal static class DeathInterceptController
         var completion = new TaskCompletionSource<bool>();
         var dialog = new AcceptDialog
         {
-            Name = "LoserEatDustDeathIntercept",
-            Title = "败者食尘：死亡拦截",
+            Name = "NodeRewindDeathIntercept",
+            Title = "节点回溯：死亡拦截",
             DialogText = "你被击败了，但本局尚未结束。\n可以从当前节点初始状态重新开始。",
             OkButtonText = "从本节点重来",
             Exclusive = true,
@@ -155,7 +155,7 @@ internal static class DeathInterceptController
         giveUp.SelfModulate = new Color(0.95f, 0.58f, 0.52f);
 
         dialog.PopupCentered();
-        MainFile.Logger.Info("[败者食尘] death dialog opened; run save and node snapshots remain intact.");
+        MainFile.Logger.Info("[节点回溯] death dialog opened; run save and node snapshots remain intact.");
         return await completion.Task;
     }
 

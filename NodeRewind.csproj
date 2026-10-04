@@ -6,8 +6,8 @@
     <ImplicitUsings>true</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>LoserEatDust</RootNamespace>
-    <AssemblyName>LoserEatDust</AssemblyName>
+    <RootNamespace>NodeRewind</RootNamespace>
+    <AssemblyName>NodeRewind</AssemblyName>
     <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
     <PathMap>$(AppOutputBase)=.\</PathMap>
     <GodotDisabledSourceGenerators>GodotPluginsInitializer</GodotDisabledSourceGenerators>
@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="LoserEatDustCode\**\*.cs" />
-    <None Include="LoserEatDust.json" />
+    <Compile Include="NodeRewindCode\**\*.cs" />
+    <None Include="NodeRewind.json" />
   </ItemGroup>
 
   <Target Name="CheckDependencyPaths">
@@ -30,10 +30,10 @@
   </Target>
 
   <Target Name="CopyToModsFolderOnBuild" AfterTargets="Build" Condition="Exists('$(Sts2Path)')">
-    <Message Text="Installing LoserEatDust to $(ModsPath)LoserEatDust/" Importance="high" />
-    <MakeDir Directories="$(ModsPath)LoserEatDust/" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)LoserEatDust/" />
-    <Copy SourceFiles="LoserEatDust.json" DestinationFolder="$(ModsPath)LoserEatDust/" />
-    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)LoserEatDust/" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+    <Message Text="Installing NodeRewind to $(ModsPath)NodeRewind/" Importance="high" />
+    <MakeDir Directories="$(ModsPath)NodeRewind/" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)NodeRewind/" />
+    <Copy SourceFiles="NodeRewind.json" DestinationFolder="$(ModsPath)NodeRewind/" />
+    <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)NodeRewind/" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
   </Target>
 </Project>

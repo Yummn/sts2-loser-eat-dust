@@ -4,12 +4,12 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using System.Reflection;
 
-namespace LoserEatDust;
+namespace NodeRewind;
 
 [ModInitializer(nameof(Initialize))]
 public partial class MainFile : Node
 {
-    public const string ModId = "LoserEatDust";
+    public const string ModId = "NodeRewind";
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } = new(ModId, LogType.Generic);
 
@@ -24,8 +24,8 @@ public partial class MainFile : Node
             // mods are initialized back-to-back. Android can observe both the
             // save file and pause-menu scene directly, so avoid every native
             // detour here instead of merely removing one redundant save hook.
-            LoserEatDustAndroidWatcher.Install();
-            Logger.Info("[败者食尘] loaded v0.3.0: Android uses detour-free save, pause, and death interception; BaseLib not required.");
+            NodeRewindAndroidWatcher.Install();
+            Logger.Info("[节点回溯] loaded v0.4.1: Android uses detour-free save, map-node rewind, and death interception; BaseLib not required.");
             return;
         }
 
@@ -34,11 +34,11 @@ public partial class MainFile : Node
                      .Where(t => t.GetCustomAttributes(typeof(HarmonyPatch), true).Length > 0)
                      .OrderBy(t => t.FullName, StringComparer.Ordinal))
         {
-            Logger.Info($"[败者食尘] patching {type.FullName}");
+            Logger.Info($"[节点回溯] patching {type.FullName}");
             harmony.CreateClassProcessor(type).Patch();
-            Logger.Info($"[败者食尘] patched {type.FullName}");
+            Logger.Info($"[节点回溯] patched {type.FullName}");
         }
-        Logger.Info("[败者食尘] loaded v0.3.0: desktop save hooks and detour-free death interception enabled; BaseLib not required.");
+        Logger.Info("[节点回溯] loaded v0.4.1: desktop save hooks, map-node rewind, and detour-free death interception enabled; BaseLib not required.");
     }
 
     private static bool IsAndroidRuntime()

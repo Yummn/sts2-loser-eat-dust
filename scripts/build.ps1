@@ -16,10 +16,10 @@ if (Test-Path $LocalDotnet) {
 $props = @()
 if ($Sts2Path) { $props += "/p:Sts2Path=$Sts2Path" }
 
-dotnet restore .\LoserEatDust.csproj @props
+dotnet restore .\NodeRewind.csproj @props
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-dotnet build .\LoserEatDust.csproj -c $Configuration @props
+dotnet build .\NodeRewind.csproj -c $Configuration @props
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host "LoserEatDust / 败者食尘 built and installed." -ForegroundColor Green
+Write-Host "NodeRewind / 节点回溯 built and installed." -ForegroundColor Green

@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Audio;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
-namespace LoserEatDust;
+namespace NodeRewind;
 
 internal static class RunRestarter
 {
@@ -63,12 +63,13 @@ internal static class RunRestarter
                 await setupTask;
             NGame.Instance.ReactionContainer.InitializeNetworking(new NetSingleplayerGameService());
             await NGame.Instance.LoadRun(runState, serializableRun.PreFinishedRoom);
-            MainFile.Logger.Info($"[败者食尘] restored {checkpoint.Key}: {checkpoint.DisplayName}.");
+            NodeRewindMap.InvalidateAndRefreshDeferred();
+            MainFile.Logger.Info($"[节点回溯] restored {checkpoint.Key}: {checkpoint.DisplayName}.");
         }
         catch (Exception ex)
         {
             RecordNodeEntryPatch.SuppressCapture = false;
-            MainFile.Logger.Error($"[败者食尘] restore failed: {ex}");
+            MainFile.Logger.Error($"[节点回溯] restore failed: {ex}");
         }
         finally
         {

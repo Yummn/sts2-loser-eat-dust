@@ -1,0 +1,14 @@
+﻿{
+    "id":  "NodeRewind",
+    "name":  "节点回溯 / Node Rewind",
+    "author":  "Codex",
+    "description":  "Marks visited map nodes and lets you click any recorded node to rewind to its entry state. Also intercepts combat death for a retry from the current node. Single-player only; no BaseLib or PCK.",
+    "version":  "v0.4.1",
+    "min_game_version":  "0.103.2",
+    "has_pck":  false,
+    "has_dll":  true,
+    "dependencies":  [
+
+                     ],
+    "affects_gameplay":  true
+}

@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Managers;
 using System.Reflection;
 
-namespace LoserEatDust;
+namespace NodeRewind;
 
 [HarmonyPatch]
 internal static class RecordNodeEntryPatch
@@ -48,7 +48,7 @@ internal static class RecordNodeEntryPatch
         }
         catch (Exception ex)
         {
-            MainFile.Logger.Error($"[败者食尘] node snapshot failed: {ex}");
+            MainFile.Logger.Error($"[节点回溯] node snapshot failed: {ex}");
         }
     }
 
@@ -90,7 +90,7 @@ internal static class RecordCompletedSavePatch
         }
         catch (Exception ex)
         {
-            MainFile.Logger.Error($"[败者食尘] completed-save snapshot fallback failed: {ex}");
+            MainFile.Logger.Error($"[节点回溯] completed-save snapshot fallback failed: {ex}");
         }
     }
 }

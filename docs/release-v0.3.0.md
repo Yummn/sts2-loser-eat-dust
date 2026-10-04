@@ -1,4 +1,4 @@
-# 败者食尘 v0.3.0
+# 节点回溯 v0.3.0（原败者食尘）
 
 ## 新功能
 
@@ -18,4 +18,4 @@
 
 交互思路参考 MIT 开源项目
 [`Douvahkiin/StS2-DeathIntercept`](https://github.com/Douvahkiin/StS2-DeathIntercept)。
-本版本使用败者食尘自身的节点快照和游戏公开 Hook 重新实现。
+本版本使用节点回溯自身的节点快照和游戏公开 Hook 重新实现；“败者食尘”是此版本以前的旧名称。
