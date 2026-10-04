@@ -2,19 +2,20 @@
 
 当前版本：v0.4.1
 
-适配《杀戮尖塔 2》手机版 v0.103.2 与桌面版 v0.107.x 的无 BaseLib、纯 DLL 模组。
+> 项目分类：个人项目 / 《杀戮尖塔 2》Mod / 节点回溯工具 / 持续维护
 
-## 下载
+一个基于地图节点快照的回溯 Mod。它会保存本阶段已到达节点的初始状态，让玩家可以回到之前经过的节点重新开始；在角色正常防死效果结算后仍将死亡时，也可以拦截死亡并选择从当前节点重来。
+
+当前版本：`v0.4.1`
 
 - [v0.4.1（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.1)
 - [历史版本](https://github.com/Yummn/sts2-loser-eat-dust/releases)
-
-## 功能
+- [全部 Releases](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 
 - 进入地图节点时，保存该节点的**初始状态**。
 - 当前阶段内走过多少节点，就可以从多少个节点中任意选择并重新开始。
 - 回到旧节点后，后续走过节点的记录仍然保留，可以切换到其他已经走过的节点。
-- 只记录每个坐标第一次进入时的状态，不会被战斗结束、事件完成或保存退出覆盖。
+- 重新经过被回溯的节点时，会用新时间线的首次进入状态覆盖旧记录；同一时间线后续保存不会再次覆盖。
 - 单人模式生效；不依赖 BaseLib；不含 PCK，适合移动端。
 - v0.2.1 改用游戏自带的跨平台存档后端，并在暂停菜单补记当前节点，修复手机版没有节点记录的问题。
 - v0.2.2 针对手机版 v0.103.2 的旧保存 API 做双版本兼容，修复初始化补丁失败和 `FloorReached` 缺失。
@@ -31,7 +32,7 @@
 
 打开地图后，带圆环的节点就是已经保存过初始状态的节点。直接点击节点即可回到该节点第一次进入时的状态；点击当前节点可以重新进入当前节点初始状态。回溯后，仍保留的旧节点会改用冷色圆环表示。
 
-本模组不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL 模组同时安装。
+本 Mod 不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL Mod 同时安装。
 
 ## 参考
 
@@ -40,11 +41,24 @@
 节点回溯采用不同的实现：通过游戏公开的 `ModHelper` 战斗 Hook 在死亡结算前阻止死亡，
 并复用自身节点快照恢复，不拦截或删除原版存档函数。
 
-## 安装
+参考项目：
 
-模组目录结构：
+- [StS2-DeathIntercept](https://github.com/Douvahkiin/StS2-DeathIntercept)
+
+## 安装
 
 ```text
 mods/NodeRewind/NodeRewind.dll
 mods/NodeRewind/NodeRewind.json
 ```
+
+下载与游戏平台和版本对应的 ZIP，解压后将 `NodeRewind` 文件夹完整放入游戏 `mods/` 目录。
+
+## 兼容版本
+
+- Android v0.103.2
+- Android v0.110.1
+- Android v0.111.0
+- PC v0.111.0
+
+不依赖 BaseLib，不含 PCK。详细版本变化见各个 [Release](https://github.com/Yummn/sts2-loser-eat-dust/releases)。
