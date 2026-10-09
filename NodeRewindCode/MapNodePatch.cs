@@ -77,6 +77,12 @@ internal static class NodeRewindMap
         if (!IsSinglePlayer() || point.Point is null)
             return false;
 
+        // A checkpoint on the next reachable node must not steal ordinary
+        // forward travel. Otherwise a revisited branch discards the new
+        // timeline's rewards and can never replace its old entry snapshot.
+        if (CanNormallyTravel(point))
+            return false;
+
         EnsureCache();
         if (!_checkpoints.TryGetValue(point.Point.coord, out var checkpoint))
             return false;
@@ -101,8 +107,14 @@ internal static class NodeRewindMap
         // The original map marks all traveled nodes disabled. Historical
         // checkpoints are deliberately clickable even when the run is not in
         // a travel phase; the click patch consumes them before vanilla travel.
-        point.Enable();
+        // Android deliberately skips these Harmony patches. Its marker is an
+        // input overlay, so leave the vanilla point disabled: forwarding a
+        // Released signal would also execute ordinary map travel.
+        if (!IsAndroid())
+            point.Enable();
         var marker = GetOrCreateMarker(point);
+        marker.MouseFilter = IsAndroid() && !CanNormallyTravel(point)
+            ? Control.MouseFilterEnum.Stop : Control.MouseFilterEnum.Ignore;
         var state = point.Point.coord == _currentCoord
             ? NodeRewindMarkerState.Current
             : _currentPath.Contains(point.Point.coord)
@@ -132,13 +144,13 @@ internal static class NodeRewindMap
         }).CallDeferred();
     }
 
-    public static void RefreshAllMarkers()
+    public static void RefreshAllMarkers(bool force = true)
     {
         var screen = NMapScreen.Instance;
-        if (!GodotObject.IsInstanceValid(screen) || !screen.IsVisibleInTree())
+        if (!GodotObject.IsInstanceValid(screen) || !screen.IsInsideTree() || !screen.IsVisibleInTree())
             return;
 
-        EnsureCache(force: true);
+        EnsureCache(force);
         var points = screen.GetNodeOrNull<Control>("TheMap/Points");
         if (points is null)
             return;
@@ -212,6 +224,12 @@ internal static class NodeRewindMap
             return false;
         }
     }
+
+    internal static bool IsAndroid() => OS.HasFeature("android");
+
+    private static bool CanNormallyTravel(NMapPoint point) =>
+        GodotObject.IsInstanceValid(NMapScreen.Instance) &&
+        NMapScreen.Instance.IsTravelEnabled && point.Get("IsTravelable").AsBool();
 }
 
 internal enum NodeRewindMarkerState
@@ -226,10 +244,13 @@ internal partial class NodeRewindMarker : Control
     internal const string NodeName = "NodeRewindMarker";
     private NodeRewindMarkerState _state;
     private int _visitNumber;
+    private bool _pressed;
+    private Vector2 _pressPosition;
 
     public override void _Ready()
     {
-        MouseFilter = MouseFilterEnum.Ignore;
+        MouseFilter = NodeRewindMap.IsAndroid() ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
+        FocusMode = FocusModeEnum.None;
         ZIndex = 25;
         SetAnchorsPreset(LayoutPreset.Center);
         OffsetLeft = -72f;
@@ -237,6 +258,46 @@ internal partial class NodeRewindMarker : Control
         OffsetRight = 72f;
         OffsetBottom = 72f;
         QueueRedraw();
+    }
+
+    public override void _GuiInput(InputEvent input)
+    {
+        if (!NodeRewindMap.IsAndroid()) return;
+        Vector2 position;
+        bool pressed;
+        if (input is InputEventScreenTouch touch)
+        {
+            position = touch.Position;
+            pressed = touch.Pressed;
+        }
+        else if (input is InputEventMouseButton mouse && mouse.ButtonIndex == MouseButton.Left)
+        {
+            position = mouse.Position;
+            pressed = mouse.Pressed;
+        }
+        else if (input is InputEventScreenDrag drag)
+        {
+            if (drag.Position.DistanceTo(_pressPosition) > 18f) _pressed = false;
+            return;
+        }
+        else if (input is InputEventMouseMotion motion)
+        {
+            if (motion.Position.DistanceTo(_pressPosition) > 18f) _pressed = false;
+            return;
+        }
+        else return;
+
+        AcceptEvent();
+        if (pressed)
+        {
+            _pressPosition = position;
+            _pressed = true;
+            return;
+        }
+        var shouldRestore = _pressed && position.DistanceTo(_pressPosition) <= 18f;
+        _pressed = false;
+        if (shouldRestore && GetParent() is NMapPoint point)
+            NodeRewindMap.TryHandleClick(point);
     }
 
     internal void SetState(NodeRewindMarkerState state, int visitNumber)

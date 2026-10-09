@@ -25,7 +25,7 @@ public partial class MainFile : Node
             // save file and pause-menu scene directly, so avoid every native
             // detour here instead of merely removing one redundant save hook.
             NodeRewindAndroidWatcher.Install();
-            Logger.Info("[节点回溯] loaded v0.4.1: Android uses detour-free save, map-node rewind, and death interception; BaseLib not required.");
+            Logger.Info("[节点回溯] loaded v0.4.2: Android uses detour-free save polling, interactive map markers, and death interception; BaseLib not required.");
             return;
         }
 
@@ -38,7 +38,7 @@ public partial class MainFile : Node
             harmony.CreateClassProcessor(type).Patch();
             Logger.Info($"[节点回溯] patched {type.FullName}");
         }
-        Logger.Info("[节点回溯] loaded v0.4.1: desktop save hooks, map-node rewind, and detour-free death interception enabled; BaseLib not required.");
+        Logger.Info("[节点回溯] loaded v0.4.2: desktop save hooks, map-node rewind, and detour-free death interception enabled; BaseLib not required.");
     }
 
     private static bool IsAndroidRuntime()

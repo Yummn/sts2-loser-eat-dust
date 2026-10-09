@@ -1,12 +1,13 @@
 using Godot;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace NodeRewind;
 
 /// <summary>
 /// Android replacement for the save Harmony detour. Polling the authoritative
-/// run save avoids MonoMod's intermittent ARM64 startup crash; map interaction
-/// is provided by the shared node patches on both platforms.
+/// run save avoids MonoMod's intermittent ARM64 startup crash. On Android the
+/// map markers receive input directly; no Harmony map detour is installed.
 /// </summary>
 internal sealed partial class NodeRewindAndroidWatcher : Node
 {
@@ -14,6 +15,8 @@ internal sealed partial class NodeRewindAndroidWatcher : Node
     private static NodeRewindAndroidWatcher? _instance;
     private double _saveElapsed;
     private string? _capturedIdentity;
+    private double _mapElapsed;
+    private bool _mapWasVisible;
 
     internal static void Install()
     {
@@ -26,12 +29,22 @@ internal sealed partial class NodeRewindAndroidWatcher : Node
     public override void _Process(double delta)
     {
         _saveElapsed += delta;
+        _mapElapsed += delta;
 
         if (_saveElapsed >= SavePollInterval)
         {
             _saveElapsed = 0;
             PollRunSave();
         }
+
+        var screen = NMapScreen.Instance;
+        var mapVisible = GodotObject.IsInstanceValid(screen) && screen.IsInsideTree() && screen.IsVisibleInTree();
+        if (mapVisible && (!_mapWasVisible || _mapElapsed >= 0.25))
+        {
+            _mapElapsed = 0;
+            NodeRewindMap.RefreshAllMarkers(force: !_mapWasVisible);
+        }
+        _mapWasVisible = mapVisible;
     }
 
     private void PollRunSave()
@@ -46,6 +59,7 @@ internal sealed partial class NodeRewindAndroidWatcher : Node
             if (identity == _capturedIdentity) return;
             SnapshotStore.CaptureInitialState(save);
             _capturedIdentity = identity;
+            NodeRewindMap.InvalidateAndRefreshDeferred();
         }
         catch
         {

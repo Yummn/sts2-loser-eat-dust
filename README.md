@@ -1,14 +1,14 @@
 # 节点回溯 / Node Rewind
 
-当前版本：v0.4.1
+当前版本：v0.4.2
 
 > 项目分类：个人项目 / 《杀戮尖塔 2》Mod / 节点回溯工具 / 持续维护
 
 一个基于地图节点快照的回溯 Mod。它会保存本阶段已到达节点的初始状态，让玩家可以回到之前经过的节点重新开始；在角色正常防死效果结算后仍将死亡时，也可以拦截死亡并选择从当前节点重来。
 
-当前版本：`v0.4.1`
+当前版本：`v0.4.2`
 
-- [v0.4.1（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.1)
+- [v0.4.2（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.2)
 - [历史版本](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 - [全部 Releases](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 
@@ -27,10 +27,13 @@
 - 当前路线的记录使用暖金色圆环；回溯后遗留的旧分支使用蓝色圆环；当前节点使用更亮的金色圆环。
 - 首次加载当前局时会把旧版 `loser_eat_dust` 记录迁移到 `node_rewind`，不需要手动删除旧记录。
 - v0.4.1 清理旧名称和旧交互文案，统一显示为“节点回溯”；保留旧存档目录迁移以兼容已有进行中的本局记录。
+- v0.4.2 补齐 Android 地图圆环与触控回溯，不再依赖地图 Harmony 补丁；修复旧分支上的可正常前进节点被回溯抢占、无法覆盖记录的问题。
 
 ## 使用
 
 打开地图后，带圆环的节点就是已经保存过初始状态的节点。直接点击节点即可回到该节点第一次进入时的状态；点击当前节点可以重新进入当前节点初始状态。回溯后，仍保留的旧节点会改用冷色圆环表示。
+
+如果带圆环的节点正好是本次路线下一步可正常进入的节点，点击会优先正常前进，并用新时间线的房间初始状态覆盖旧记录；不会丢弃刚获得的奖励。手机拖动地图不会触发回溯。
 
 本 Mod 不再提供普通“重试本房”功能，因此可以和已有 Quick Restart / 快速 SL Mod 同时安装。
 
@@ -60,5 +63,7 @@ mods/NodeRewind/NodeRewind.json
 - Android v0.110.1
 - Android v0.111.0
 - PC v0.111.0
+
+本次 v0.4.2 手机实测环境为 Android v0.111.0、启动器 v0.1.9。已验证地图点击回溯、圆环颜色、生命/金币/牌组恢复、银行余额恢复，以及重新经过节点时覆盖旧记录。旧游戏版本列表属于历史安装包，不表示本次构建已在每个旧版本重新测试。详见 [v0.4.2 验证记录](docs/release-v0.4.2.md)。
 
 不依赖 BaseLib，不含 PCK。详细版本变化见各个 [Release](https://github.com/Yummn/sts2-loser-eat-dust/releases)。
