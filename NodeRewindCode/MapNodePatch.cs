@@ -97,12 +97,24 @@ internal static class NodeRewindMap
 
     public static void RefreshPoint(NMapPoint point)
     {
+        var marker = point.GetNodeOrNull<NodeRewindMarker>(NodeRewindMarker.NodeName);
         if (!IsSinglePlayer() || point.Point is null)
+        {
+            HideMarker(marker);
             return;
+        }
 
         EnsureCache();
         if (!_checkpoints.TryGetValue(point.Point.coord, out var checkpoint))
+        {
+            // NMapPoint instances can be reused when the run advances to a
+            // different act. A point without a checkpoint must actively hide
+            // the marker created for the previous map; returning here leaves
+            // the old act's ring visible and, on Android, still intercepting
+            // touch input.
+            HideMarker(marker);
             return;
+        }
 
         // The original map marks all traveled nodes disabled. Historical
         // checkpoints are deliberately clickable even when the run is not in
@@ -112,7 +124,7 @@ internal static class NodeRewindMap
         // Released signal would also execute ordinary map travel.
         if (!IsAndroid())
             point.Enable();
-        var marker = GetOrCreateMarker(point);
+        marker ??= GetOrCreateMarker(point);
         marker.MouseFilter = IsAndroid() && !CanNormallyTravel(point)
             ? Control.MouseFilterEnum.Stop : Control.MouseFilterEnum.Ignore;
         var state = point.Point.coord == _currentCoord
@@ -157,6 +169,14 @@ internal static class NodeRewindMap
 
         foreach (var point in points.GetChildren().OfType<NMapPoint>())
             RefreshPoint(point);
+    }
+
+    private static void HideMarker(NodeRewindMarker? marker)
+    {
+        if (marker is null || !GodotObject.IsInstanceValid(marker))
+            return;
+
+        marker.HideForMapRefresh();
     }
 
     private static void EnsureCache(bool force = false)
@@ -305,6 +325,14 @@ internal partial class NodeRewindMarker : Control
         _state = state;
         _visitNumber = visitNumber;
         Visible = true;
+        QueueRedraw();
+    }
+
+    internal void HideForMapRefresh()
+    {
+        _pressed = false;
+        MouseFilter = MouseFilterEnum.Ignore;
+        Visible = false;
         QueueRedraw();
     }
 

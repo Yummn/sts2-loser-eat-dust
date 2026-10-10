@@ -1,14 +1,14 @@
 # 节点回溯 / Node Rewind
 
-当前版本：v0.4.2
+当前版本：v0.4.3
 
 > 项目分类：个人项目 / 《杀戮尖塔 2》Mod / 节点回溯工具 / 持续维护
 
 一个基于地图节点快照的回溯 Mod。它会保存本阶段已到达节点的初始状态，让玩家可以回到之前经过的节点重新开始；在角色正常防死效果结算后仍将死亡时，也可以拦截死亡并选择从当前节点重来。
 
-当前版本：`v0.4.2`
+当前版本：`v0.4.3`
 
-- [v0.4.2（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.2)
+- [v0.4.3（推荐）](https://github.com/Yummn/sts2-loser-eat-dust/releases/tag/v0.4.3)
 - [历史版本](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 - [全部 Releases](https://github.com/Yummn/sts2-loser-eat-dust/releases)
 
@@ -28,6 +28,7 @@
 - 首次加载当前局时会把旧版 `loser_eat_dust` 记录迁移到 `node_rewind`，不需要手动删除旧记录。
 - v0.4.1 清理旧名称和旧交互文案，统一显示为“节点回溯”；保留旧存档目录迁移以兼容已有进行中的本局记录。
 - v0.4.2 补齐 Android 地图圆环与触控回溯，不再依赖地图 Harmony 补丁；修复旧分支上的可正常前进节点被回溯抢占、无法覆盖记录的问题。
+- v0.4.3 切换地图或幕时主动隐藏没有当前记录的旧圆环，并取消其触控拦截，修复上一幕标记串到下一幕的问题。
 
 ## 使用
 
@@ -64,6 +65,6 @@ mods/NodeRewind/NodeRewind.json
 - Android v0.111.0
 - PC v0.111.0
 
-本次 v0.4.2 手机实测环境为 Android v0.111.0、启动器 v0.1.9。已验证地图点击回溯、圆环颜色、生命/金币/牌组恢复、银行余额恢复，以及重新经过节点时覆盖旧记录。旧游戏版本列表属于历史安装包，不表示本次构建已在每个旧版本重新测试。详见 [v0.4.2 验证记录](docs/release-v0.4.2.md)。
+v0.4.2 手机实测环境为 Android v0.111.0、启动器 v0.1.9，已验证地图点击回溯、圆环颜色、生命/金币/牌组恢复、银行余额恢复，以及重新经过节点时覆盖旧记录。详见 [v0.4.2 验证记录](docs/release-v0.4.2.md)。v0.4.3 已完成源码检查、Release 构建和安装包校验；跨幕清理标记仍需在手机实际切幕后验证。旧游戏版本列表属于历史安装包，不表示本次构建已在每个旧版本重新测试。
 
 不依赖 BaseLib，不含 PCK。详细版本变化见各个 [Release](https://github.com/Yummn/sts2-loser-eat-dust/releases)。
